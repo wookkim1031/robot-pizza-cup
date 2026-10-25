@@ -24,6 +24,23 @@ uv run python main.py \
 | `--leader-bus`      | no       | Bus serial, or `auto` (default) for a single-bus station. |
 | `--follower-server` | yes      | Station hostname for the follower bus.               |
 | `--follower-bus`    | no       | Bus serial, or `auto` (default).                     |
+| `--range-overrides` | no       | Per-joint arcs JSON (default `range_overrides.json` next to `main.py`; missing file = none). |
+
+## Per-joint range overrides
+
+The station calibrates a whole bus at once. To fix one joint's arc without
+recalibrating the arm, record it by hand (read-only; nothing is written to the
+motors):
+
+```bash
+uv run python record_range.py --server localhost --bus 5B61034559 --motor 4
+```
+
+Move only that joint slowly between both hard stops, then press Ctrl+C. The
+arc is saved to `range_overrides.json` under that bus serial and replaces the
+station's `range_min`/`range_max` for that joint the next time teleop starts
+(it logs `Range override: ...`). Remove one with `--clear`. Re-record after any
+station calibration of that bus, since a station save moves the motor's zero.
 
 ## What you'll see
 

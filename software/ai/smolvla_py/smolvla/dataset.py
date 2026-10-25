@@ -29,6 +29,7 @@ episode-level train/eval splitting is leak-free even across files.
 from __future__ import annotations
 
 import io
+import re
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +38,9 @@ import pyarrow.parquet as pq
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
+
+
+QUARTER_TASK_RE = re.compile(r"^put the (\w+) on the [\w-]+ quarter of the pizza$")
 
 
 def _mmap_table(path: str | Path) -> pa.Table:
@@ -68,6 +72,9 @@ class PickAndPlaceDataset(Dataset):
         chunk_size: how many future actions each sample carries.
         image_keys: what to name the per-frame JPEGs; index order matches
             the `images` list in the parquet.
+        generic_prompt_prob: chance of swapping a quarter prompt ("put the
+            cheese on the top-left quarter of the pizza") for the generic
+            "cover the pizza with cheese", so one checkpoint learns both.
 
     Each __getitem__ returns a flat dict keyed for SmolVLAPolicy.forward:
         <img_key>:                      (3, H, W) float in [0, 1]
@@ -83,12 +90,14 @@ class PickAndPlaceDataset(Dataset):
         episode_indices: list[int] | None = None,
         chunk_size: int = 50,
         image_keys: tuple[str, ...] = ("observation.images.cam0", "observation.images.cam1"),
+        generic_prompt_prob: float = 0.0,
     ):
         if isinstance(parquet_paths, (str, Path)):
             parquet_paths = [parquet_paths]
         self.paths = [Path(p) for p in parquet_paths]
         self.chunk_size = chunk_size
         self.image_keys = tuple(image_keys)
+        self.generic_prompt_prob = generic_prompt_prob
 
         # Load all tables mmapped, compute global episode indices, merge into
         # a single flat view.
@@ -215,11 +224,17 @@ class PickAndPlaceDataset(Dataset):
                 arr = np.asarray(im, dtype=np.uint8)
             images[key] = torch.from_numpy(arr.copy()).permute(2, 0, 1).float() / 255.0
 
+        task = self._tasks_all[row]
+        if self.generic_prompt_prob > 0 and torch.rand(()).item() < self.generic_prompt_prob:
+            m = QUARTER_TASK_RE.match(task)
+            if m:
+                task = f"cover the pizza with {m.group(1)}"
+
         sample = {
             "observation.state": torch.from_numpy(self._state_all[row].copy()),
             "action": torch.from_numpy(action),
             "action_is_pad": torch.from_numpy(is_pad),
-            "task": self._tasks_all[row],
+            "task": task,
         }
         sample.update(images)
         return sample

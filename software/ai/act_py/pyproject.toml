@@ -1,0 +1,10 @@
+[project]
+name = "act-py"
+version = "0.1.0"
+description = "ACT policy training on norma-core parquet datasets via lerobot"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "lerobot[dataset,training]==0.6.1",
+    "pyarrow>=16",
+    "pillow>=10",
+]

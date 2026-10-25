@@ -28,8 +28,6 @@ ROOT = Path(__file__).resolve().parent.parent
 DATASETS = ROOT.parent / "datasets"
 CKPT_DIR = ROOT / "checkpoints"
 IMAGE_KEYS = ("observation.images.cam0", "observation.images.cam1")
-STATE_DIM = 6
-ACTION_DIM = 6
 
 DEFAULT_PARQUETS = [DATASETS / "dataset.parquet"]
 
@@ -58,6 +56,8 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_PARQUETS,
         help="Parquet files to merge.",
     )
+    p.add_argument("--generic-prompt-prob", type=float, default=0.0,
+                   help="Chance of training a quarter-prompt sample on 'cover the pizza with X' instead.")
     p.add_argument("--base-checkpoint", type=str, default="lerobot/smolvla_base")
     p.add_argument("--output", type=Path, default=CKPT_DIR / "run")
     return p.parse_args()
@@ -144,8 +144,10 @@ def main() -> None:
 
     args.output.mkdir(parents=True, exist_ok=True)
 
-    train_ds = PickAndPlaceDataset(args.parquets, image_keys=IMAGE_KEYS)
-    print(f"episodes: {train_ds.total_episodes}  frames: {len(train_ds)}")
+    train_ds = PickAndPlaceDataset(
+        args.parquets, image_keys=IMAGE_KEYS, generic_prompt_prob=args.generic_prompt_prob
+    )
+    print(f"episodes: {train_ds.total_episodes}  frames: {len(train_ds)}  joints: {train_ds.n_joints}")
 
     stats = compute_stats(train_ds._state, train_ds._action)
     stats_path = args.output / "stats.safetensors"
@@ -161,8 +163,11 @@ def main() -> None:
         args.base_checkpoint,
         config_overrides={
             "image_keys": list(IMAGE_KEYS),
-            "state_dim": STATE_DIM,
-            "action_dim": ACTION_DIM,
+            # Joint count comes from the data: 6 for SO-101, 8 for ElRobot.
+            # action_dim slices the loss, so a too-small value silently drops
+            # the trailing joints (wrist roll, gripper) from training.
+            "state_dim": train_ds.n_joints,
+            "action_dim": train_ds.n_joints,
             "load_vlm_weights": False,
             "empty_cameras": 0,
         },

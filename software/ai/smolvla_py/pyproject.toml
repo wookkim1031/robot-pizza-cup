@@ -12,6 +12,8 @@ dependencies = [
     "pillow>=10",
     "num2words>=0.5",        # optional dep of transformers SmolVLM processor; needed for numeric prompts
     "pyarrow>=16",
+    "anthropic>=2.3.0",
+    "opencv-python-headless>=5.0.0.93",
 ]
 
 [build-system]

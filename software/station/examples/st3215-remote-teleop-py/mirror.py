@@ -9,10 +9,13 @@ For each motor pair (same id on leader and follower bus) we:
   4. Pick speed/accel proportional to the remaining travel distance.
 """
 
+import logging
 from dataclasses import dataclass, field
 from enum import Enum
 
 from config import MotorConfig
+
+logger = logging.getLogger(__name__)
 
 
 # Motor status register bit 0 = under-voltage. Common on leaders when their rail
@@ -168,6 +171,12 @@ def compute_motor_command(
                     protection.blocked_direction = Direction.POSITIVE
                 else:
                     protection.blocked_direction = Direction.NEGATIVE
+                logger.warning(
+                    "M%d overload: current=%d >= %d at pos=%d, blocking %s moves "
+                    "until the leader reverses",
+                    motor_id, follower.current, threshold,
+                    follower.present_position, protection.blocked_direction.name,
+                )
 
             # Hold position while current is elevated. Only re-issue the goal
             # if the follower is meaningfully off its current target.
@@ -183,6 +192,10 @@ def compute_motor_command(
             and leader_direction is not None
             and leader_direction != protection.blocked_direction
         ):
+            logger.info(
+                "M%d released: leader reversed, current=%d at pos=%d",
+                motor_id, follower.current, follower.present_position,
+            )
             protection.blocked_direction = None
 
     # Leader still wants to push into the blocked direction — refuse.

@@ -16,6 +16,7 @@ import asyncio
 import logging
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 
 # Add repo root so the generated protobuf and station_py imports resolve.
@@ -24,7 +25,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent))
 from software.station.shared.station_py import new_station_client
 from target.gen_python.protobuf.drivers.st3215 import st3215
 
-from config import MAX_DATA_AGE_NS, MotorConfig, TELEOP_REFRESH_INTERVAL_S
+from config import (
+    DEFAULT_RANGE_OVERRIDES_PATH,
+    MAX_DATA_AGE_NS,
+    MotorConfig,
+    RangeOverrides,
+    TELEOP_REFRESH_INTERVAL_S,
+    load_range_overrides,
+)
 from commands import send_motor_commands, set_torque
 from mirror import ProtectionTable, compute_motor_command
 from state import find_bus, parse_motor_state, resolve_bus_serial
@@ -148,6 +156,7 @@ async def teleop_loop(
     follower_bus_serial: str,
     follower_client,
     config: MotorConfig,
+    range_overrides: RangeOverrides,
 ):
     """Read latest leader state, compute follower commands, send them. Repeat.
 
@@ -215,6 +224,8 @@ async def teleop_loop(
                 else:
                     cmds = _compute_tick_commands(
                         leader_bus, follower_bus, protection, config,
+                        range_overrides.get(leader_bus_serial, {}),
+                        range_overrides.get(follower_bus_serial, {}),
                     )
                     if cmds:
                         await send_motor_commands(follower_client, follower_bus_serial, cmds)
@@ -233,9 +244,21 @@ async def teleop_loop(
             logger.warning("tick took %.1fms", elapsed * 1000)
 
 
-def _compute_tick_commands(leader_bus, follower_bus, protection, config):
+def _apply_range_override(state, motor_id, overrides):
+    arc = overrides.get(motor_id)
+    if arc is None:
+        return state
+    return replace(state, range_min=arc[0], range_max=arc[1])
+
+
+def _compute_tick_commands(
+    leader_bus, follower_bus, protection, config,
+    leader_overrides, follower_overrides,
+):
     follower_motors = {
-        m.get_id(): parse_motor_state(m)
+        m.get_id(): _apply_range_override(
+            parse_motor_state(m), m.get_id(), follower_overrides,
+        )
         for m in (follower_bus.get_motors() or [])
     }
 
@@ -245,7 +268,9 @@ def _compute_tick_commands(leader_bus, follower_bus, protection, config):
         follower_state = follower_motors.get(motor_id)
         if follower_state is None:
             continue
-        leader_state = parse_motor_state(leader_motor)
+        leader_state = _apply_range_override(
+            parse_motor_state(leader_motor), motor_id, leader_overrides,
+        )
         cmd = compute_motor_command(
             motor_id, leader_state, follower_state,
             protection.get(motor_id), config,
@@ -293,12 +318,17 @@ async def main_async(args):
 
     config = MotorConfig()
 
+    range_overrides = load_range_overrides(Path(args.range_overrides))
+    for serial in (leader_serial, follower_serial):
+        for motor_id, (lo, hi) in sorted(range_overrides.get(serial, {}).items()):
+            logger.info("Range override: bus %s M%d -> %d-%d", serial, motor_id, lo, hi)
+
     await set_torque(follower_client, follower_serial, follower_motor_ids, enable=True)
 
     loop_task = asyncio.create_task(teleop_loop(
         leader, leader_serial,
         follower, follower_serial,
-        follower_client, config,
+        follower_client, config, range_overrides,
     ))
 
     try:
@@ -329,6 +359,10 @@ def main():
     parser.add_argument("--leader-bus", default="auto", help='Leader bus serial, or "auto" for single-bus station')
     parser.add_argument("--follower-server", required=True, help="Station address for the follower bus")
     parser.add_argument("--follower-bus", default="auto", help='Follower bus serial, or "auto" for single-bus station')
+    parser.add_argument(
+        "--range-overrides", default=str(DEFAULT_RANGE_OVERRIDES_PATH),
+        help="JSON file of per-joint arcs written by record_range.py (missing file = none)",
+    )
     args = parser.parse_args()
 
     try:
