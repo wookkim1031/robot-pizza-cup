@@ -63,7 +63,7 @@ TAG_RE = re.compile(
     r"^(?P<task>[^|]+?) \| (?P<session>\S+) \| R(?P<round>\d+) \| E(?P<ep>\d+) \| "
     # Layout fields written by the final-collection tag.py; absent in older tags.
     # From session s2 on, the quadrant is left out and follows from the episode.
-    r"(?:(?:(?P<quadrant>TL|TR|BR|BL) \| )?(?P<pos>P\d) \| (?P<boxes>AB|BA) \| )?"
+    r"(?:(?:(?P<quadrant>TL|TR|BR|BL) \| )?(?P<pos>P\w+) \| (?P<boxes>AB|BA|3BOWL|[CKP]{3})\+?K? \| )?"
     r"(?P<op>[^|]+?) \| (?P<marker>.*)$"
 )
 def quadrant_order(args, rnd: int) -> list[str]:

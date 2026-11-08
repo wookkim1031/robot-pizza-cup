@@ -42,8 +42,8 @@ class RobotConfig:
     check_model: Path = DEFAULT_CHECK_MODEL
     check_thr: float = 0.65                    # p(added) above this counts as placed
     check_settle: float = 0.5                  # seconds at home before the checker's frame
-    failure_checker: str = "v1"                # "v1" fixed sector boxes, "v2" boxes around the located pizza
-    checker_max_offset: float = 15.0           # v2: located pizza further than this (px) -> v1 boxes
+    failure_checker: str = "v2"                # "v1" fixed sector boxes, "v2" boxes around the located pizza
+    checker_max_offset: float = 40.0           # v2: located pizza further than this (px) -> v1 boxes
     checker_log: Path | None = None            # dir for checker events + overlays (web UI)
     drive: DriveConfig = field(default_factory=DriveConfig)
     server: str = "localhost"

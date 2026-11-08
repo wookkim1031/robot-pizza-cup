@@ -461,10 +461,10 @@ details{margin-top:10px}summary{cursor:pointer;font-size:13px;font-weight:600}
     <div class="hint" id="time-hint"></div>
     <div class="row">
       <div><label>Change checker</label><select id="check"></select></div>
-      <div><label>Checker version</label><select id="failure_checker"><option value="v1">v1 · fixed boxes</option><option value="v2">v2 · boxes follow the pizza</option></select></div>
+      <div><label>Checker version</label><select id="failure_checker"><option value="v2">v2 · boxes follow the pizza</option><option value="v1">v1 · fixed boxes</option></select></div>
       <div id="effort-box" class="hidden"><label>Effort</label><select id="effort"><option>low</option><option>medium</option><option>high</option></select></div>
     </div>
-    <div class="hint">Checker: after each pepperoni step it compares the scene before and after to see if a slice landed in the target quadrant (and retries if not). Cheese is never checked. v1 uses fixed quadrant boxes, so it only works with the pizza in its usual spot. v2 finds the pizza once at the start (arm at home, before any pepperoni) and moves the boxes with it; up to ~15 px off, beyond that or if not found it falls back to v1. A dry run with v2 locates the pizza on the live image without moving the arm.</div>
+    <div class="hint">Checker: after each pepperoni step it compares the scene before and after to see if a slice landed in the target quadrant (and retries if not). Cheese is never checked. v1 uses fixed quadrant boxes, so it only works with the pizza in its usual spot. v2 finds the pizza once at the start (arm at home, before any pepperoni) and moves the boxes with it; up to ~40 px off (a ch3 shift is 10-30 px), beyond that or if not found it falls back to v1. A dry run with v2 locates the pizza on the live image without moving the arm.</div>
     <label>Checkpoint</label><select id="checkpoint"></select>
     <label>Extra args</label><input id="extra" placeholder="click an option below to add it">
     <details><summary>Available extra args (click one to add it)</summary>

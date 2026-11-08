@@ -7,8 +7,8 @@ decides when a step is done, and repeats pepperoni steps the change checker says
     ch1-pepperoni   6 slices: TL TR BR BL CENTER GAP                      budget 170 s
     ch2             ch1-cheese, then ch1-pepperoni                        cheese 200 s + pepperoni 270 s
     ch2a            ch1-pepperoni, then ch1-cheese                        pepperoni 270 s + cheese 200 s
-    ch3a            as ch2, checker off (the pizza moves)                 cheese 200 s + pepperoni 270 s
-    ch3b "<text>"   steps parsed from the recipe text, checker off        470 s split by step count
+    ch3a            as ch2, checker v2 only (the pizza moves)             cheese 200 s + pepperoni 270 s
+    ch3b "<text>"   steps parsed from the recipe text, checker v2 only    470 s split by step count
     one <ingredient> <target>     a single step, for testing
 
 Before a run: station up, arm parked at home (gripper open). Teleop is stopped with SIGKILL
@@ -50,12 +50,12 @@ def add_robot_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--check", action=argparse.BooleanOptionalAction, default=None,
                    help="change checker: after each pepperoni step, compare scene images to see whether a slice "
                         "landed in the target quadrant (and retry if not). Only valid with the pizza in its usual "
-                        "spot. Default: on for ch1/ch2/one, off for ch3")
+                        "spot (v1). Default: on for ch1/ch2/one, and for ch3 with --failure-checker v2")
     p.add_argument("--check-thr", type=float, default=0.65)
-    p.add_argument("--failure-checker", choices=["v1", "v2"], default="v1",
+    p.add_argument("--failure-checker", choices=["v1", "v2"], default="v2",
                    help="v1: fixed sector boxes. v2: the pizza is located once at the start (arm at home) and the "
                         "sector boxes follow it; falls back to the v1 boxes if it is not found or too far off")
-    p.add_argument("--checker-max-offset", type=float, default=15.0, metavar="PX",
+    p.add_argument("--checker-max-offset", type=float, default=40.0, metavar="PX",
                    help="v2: fall back to the v1 boxes when the located pizza is further than this from its usual spot")
     p.add_argument("--checker-log", type=Path, metavar="DIR",
                    help="write checker events and overlay images here (the web UI sets this)")
@@ -74,7 +74,7 @@ def add_robot_args(p: argparse.ArgumentParser) -> None:
 def robot_from_args(args, check_default: bool) -> PizzaRobot | SimRobot:
     cfg = RobotConfig(checkpoint=args.checkpoint, checkpoint_cheese=args.checkpoint_cheese,
                       checkpoint_pepperoni=args.checkpoint_pepperoni,
-                      check=check_default if args.check is None else args.check, check_thr=args.check_thr,
+                      check=(check_default or args.failure_checker == "v2") if args.check is None else args.check, check_thr=args.check_thr,
                       failure_checker=args.failure_checker, checker_log=args.checker_log,
                       checker_max_offset=args.checker_max_offset,
                       drive=DriveConfig.with_overrides(args.drive + [f"box_guard={args.box_guard}"] * bool(args.box_guard)),

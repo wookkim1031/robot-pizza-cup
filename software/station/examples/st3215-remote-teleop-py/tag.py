@@ -223,7 +223,7 @@ def main():
     p.add_argument("value", nargs="*")
     p.add_argument("--session")
     p.add_argument("--env", help="environment label added after the ingredient, e.g. new")
-    p.add_argument("--only", choices=["", "cheese", "pepperoni"],
+    p.add_argument("--only", choices=["", "cheese", "pepperoni", "zucchini"],
                    help="record rounds of 4 episodes of one ingredient ('' = mixed 10-episode rounds)")
     p.add_argument("--quadrants", help="with --only: quadrant order, e.g. TL,TR,BR,BL")
     p.add_argument("--reps", type=int, help="with --only: passes over the 4 quadrants per round")
@@ -328,7 +328,8 @@ def main():
           f"{ingredient} {quadrant} | {pos} {boxes} {state['order']} | "
           f"op {state['operator']} | session {state['session']} | "
           f"ended {state['ended']} (cheese {counts.get('cheese', 0)}, "
-          f"pepperoni {counts.get('pepperoni', 0)}) | failed {state['failed']}")
+          f"pepperoni {counts.get('pepperoni', 0)}, zucchini {counts.get('zucchini', 0)}) | "
+          f"failed {state['failed']}")
 
 
 if __name__ == "__main__":

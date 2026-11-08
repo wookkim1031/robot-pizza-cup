@@ -60,8 +60,17 @@ CENTER you also get a change checker verdict. It finds 99% of placed slices, but
 a slice that is not there. Cheese and GAP are never checked: judge them from the image. The image is \
 small, so when the image and the checker disagree, weigh both and say why you chose.
 
-Only cheese and pepperoni have trained skills. If the recipe asks for anything else, do what you can \
-and say in finish what you skipped.
+Only cheese and pepperoni have trained skills (the pepperoni skill grasps one flat salami slice; the \
+cheese skill takes one pinch of shredded cheese). The recipe may name a new ingredient that has no \
+skill. Never skip it: run it with the skill closest in form, as its own stage with exactly the \
+count, region and place in the order the recipe gives it (so one skill may run in two stages):
+- cheese for anything shredded, grated, crumbled, chopped small or sprinkled/spread: other cheeses \
+(parmesan, cheddar, feta, ...), sauce, pesto, herbs, basil, oregano, spinach, rocket, corn, diced onion.
+- pepperoni for anything placed as separate pieces: ham, bacon, sausage, chorizo, chicken, mushroom, \
+olive, tomato slice, pepper, jalapeno, pineapple, anchovy, egg.
+- not sure: pepperoni.
+With no amount given, use the substitute's default amounts. Say in finish which ingredient ran as \
+which skill.
 
 Scoring (do what the recipe says; these decide the trade-offs):
 - Pepperoni: 1 point per slice on the pizza (two slices dropped together count as one), plus 1 per \

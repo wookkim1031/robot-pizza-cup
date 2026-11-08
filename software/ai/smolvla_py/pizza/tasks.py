@@ -62,6 +62,14 @@ def default_steps(*ingredients: str) -> list[Step]:
 # Recipe text -> steps (rules; the Ch3 Part B fallback when no LLM is available)
 
 _SYNONYMS = {"cheese": "cheese", "mozzarella": "cheese", "pepperoni": "pepperoni", "salami": "pepperoni"}
+# Ch3 may name a new ingredient with no training data: run it with the skill closest in form
+# (cheese = shredded/sprinkled pinch, pepperoni = one separate piece), same as the agent prompt.
+_SYNONYMS |= {w: "cheese" for w in (
+    "parmesan", "cheddar", "feta", "ricotta", "gorgonzola", "gouda", "emmental", "provolone", "sauce",
+    "tomato sauce", "pesto", "herb", "basil", "oregano", "spinach", "rocket", "arugula", "corn", "onion")}
+_SYNONYMS |= {w: "pepperoni" for w in (
+    "ham", "prosciutto", "bacon", "sausage", "chorizo", "chicken", "meat", "mushroom", "olive", "tomato",
+    "pepper", "jalapeno", "jalapeño", "pineapple", "anchovy", "anchovies", "egg", "zucchini", "eggplant")}
 _REGIONS = {
     "right half": ("TR", "BR"), "left half": ("TL", "BL"),
     "top half": ("TL", "TR"), "upper half": ("TL", "TR"),
@@ -91,10 +99,10 @@ def parse_recipe(text: str) -> list[Step]:
     -> pepperoni TR BR TR BR, cheese TL TR BR BL TL TR BR BL
     No region: the ingredient's default targets. No count: as many as the region's default.
     """
-    names = "|".join(_SYNONYMS)
+    names = "|".join(sorted(_SYNONYMS, key=len, reverse=True))  # "tomato sauce" before "tomato"
     stages: list[list[str]] = []  # [ingredient, clause text]
     for clause in re.split(r"[,;:.]|\bthen\b|\band\b|\bafter that\b|\bfollowed by\b", text.lower()):
-        m = re.search(rf"\b({names})\b", clause)
+        m = re.search(rf"\b({names})(?:e?s)?\b", clause)  # plurals: olives, tomatoes
         if m:
             stages.append([_SYNONYMS[m.group(1)], clause])
         elif stages:
