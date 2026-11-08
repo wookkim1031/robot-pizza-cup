@@ -1,3 +1,49 @@
+# Robot Pizza Cup — Team 3 (RoboIT)
+
+This repository is our fork of [norma-core](https://github.com/norma-core/norma-core) from the Robot Pizza Cup
+hackathon (Cologne, 2026-10-23 to 25): a SmolVLA policy on the ElRobot arm (8 joints, 10 Hz) that puts cheese
+and pepperoni on a pizza. The original NormaCore README follows below.
+
+- **Our code:** `software/ai/smolvla_py/` (pizza skills, sequencer, agent, web UI, `scripts/run_challenge.py`),
+  `software/ai/act_py/` (ACT pipeline and dataset export), `software/station/examples/st3215-remote-teleop-py/`
+  (teleop changes, `tag.py`). Everything we changed: [`HACKATHON_CHANGES.md`](HACKATHON_CHANGES.md).
+- **Frozen commit** (the one in the submission form): `29496c09b9dfa5115d1e6c8367d2b8b30a3bd153`. The commit after it
+  adds the last fixes from the demo laptop, the hand-off notes, `submission/` and `sim-setting/`.
+- **Submission:** [`submission/SUBMISSION.md`](submission/SUBMISSION.md), write-up [`submission/WRITEUP.md`](submission/WRITEUP.md).
+
+## Models and datasets on Hugging Face: [RoboIT1234](https://huggingface.co/RoboIT1234)
+
+| Model | What |
+|---|---|
+| [`RoboIT1234/TEAM-3-RoboIT-smolvla-grasp5-2-2026-10-25`](https://huggingface.co/RoboIT1234/TEAM-3-RoboIT-smolvla-grasp5-2-2026-10-25) | **Submitted model.** SmolVLA fine-tuned from `lerobot/smolvla_base`, checkpoint grasp5-2 step 3000. One checkpoint for both toppings; grasp and place skills chosen by prompt. |
+| [`RoboIT1234/smolvla-grasp5-2-var-2026-10-25`](https://huggingface.co/RoboIT1234/smolvla-grasp5-2-var-2026-10-25) | Follow-up: grasp5-2 trained further on real layout-variation rounds plus 760 MuJoCo demos on randomized layouts. Handles moderate pizza shifts; with the trays swapped it still reaches for the usual tray. |
+
+Both are in the `smolvla_py` format (`config.json`, `model.safetensors`, `stats.safetensors`), not a `lerobot`
+policy folder; load them with `software/ai/smolvla_py` from this repository. Prompts and inputs are on the model cards.
+
+```bash
+cd software/ai/smolvla_py
+hf download RoboIT1234/TEAM-3-RoboIT-smolvla-grasp5-2-2026-10-25 --local-dir checkpoints/grasp5-2
+uv run python scripts/run_challenge.py ch2 --checkpoint checkpoints/grasp5-2
+```
+
+Datasets (LeRobot v3, cameras `top` = scene and `front` = wrist, 8 joint states and actions):
+
+| Dataset | Episodes | Content |
+|---|---|---|
+| [`RoboIT1234/TEAM-3-RoboIT-cheese-r1r10-2026-10-24`](https://huggingface.co/datasets/RoboIT1234/TEAM-3-RoboIT-cheese-r1r10-2026-10-24) | 63 | cheese, full episodes, rounds 1–10 |
+| [`RoboIT1234/TEAM-3-RoboIT-pepperoni-r1r10-2026-10-24`](https://huggingface.co/datasets/RoboIT1234/TEAM-3-RoboIT-pepperoni-r1r10-2026-10-24) | 60 | pepperoni, full episodes, rounds 1–10 |
+| [`RoboIT1234/TEAM-3-RoboIT-pepperoni-on-cheese-r1r5-2026-10-24`](https://huggingface.co/datasets/RoboIT1234/TEAM-3-RoboIT-pepperoni-on-cheese-r1r5-2026-10-24) | 30 | pepperoni placed on cheese, rounds 1–5 |
+| [`RoboIT1234/TEAM-3-RoboIT-pepperoni-grasp-r1r3-2026-10-25`](https://huggingface.co/datasets/RoboIT1234/TEAM-3-RoboIT-pepperoni-grasp-r1r3-2026-10-25) | 18 | pepperoni grasp-focused demos |
+| [`RoboIT1234/TEAM-3-RoboIT-pepperoni-grasp-on-cheese-r1r2-2026-10-25`](https://huggingface.co/datasets/RoboIT1234/TEAM-3-RoboIT-pepperoni-grasp-on-cheese-r1r2-2026-10-25) | 12 | pepperoni grasp-focused demos on cheese |
+| [`RoboIT1234/TEAM-3-RoboIT-cheese-grasp-r1r3-2026-10-25`](https://huggingface.co/datasets/RoboIT1234/TEAM-3-RoboIT-cheese-grasp-r1r3-2026-10-25) | 11 | cheese grasp-focused demos |
+| [`RoboIT1234/TEAM-3-RoboIT-cheese-grasp-new-2026-10-25`](https://huggingface.co/datasets/RoboIT1234/TEAM-3-RoboIT-cheese-grasp-new-2026-10-25) | 40 | cheese, new top-down grasp demos |
+| [`RoboIT1234/TEAM-3-RoboIT-pepperoni-grasp-new-2026-10-25`](https://huggingface.co/datasets/RoboIT1234/TEAM-3-RoboIT-pepperoni-grasp-new-2026-10-25) | 40 | pepperoni, new top-down grasp demos |
+
+Checkpoints, training outputs and raw recordings are not in this repository.
+
+---
+
 # NormaCore
 
 ### The Unified Toolkit for Physical System Development & Operations
